@@ -1,0 +1,187 @@
+import tkinter as tk
+from tkinter import messagebox
+
+
+class GroceryStoreApp:
+    """
+    Nosh & Nibbles Grocery Store Application
+    This application allows users to add grocery items to a shopping cart,
+    view the cart, clear the cart, start a new order, and exit the program.
+    """
+
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Nosh & Nibbles Grocery Store")
+        self.root.geometry("750x550")
+        self.root.configure(bg="#f4f4f4")
+
+        # Store cart data
+        self.cart = []
+
+        # Create menu
+        self.create_menu()
+
+        # Title
+        title_label = tk.Label(
+            root,
+            text="Nosh & Nibbles Grocery Store",
+            font=("Arial", 18, "bold"),
+            bg="#f4f4f4"
+        )
+        title_label.pack(pady=10)
+
+        # Input frame
+        input_frame = tk.Frame(root, bg="#f4f4f4")
+        input_frame.pack(pady=10)
+
+        # Item name
+        tk.Label(input_frame, text="Item Name:", font=("Arial", 11), bg="#f4f4f4").grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        self.item_entry = tk.Entry(input_frame, width=25)
+        self.item_entry.grid(row=0, column=1, padx=10, pady=5)
+
+        # Category dropdown
+        tk.Label(input_frame, text="Category:", font=("Arial", 11), bg="#f4f4f4").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        self.category_var = tk.StringVar()
+        self.category_var.set("Produce")
+        category_options = ["Produce", "Dairy", "Bakery", "Meat", "Frozen", "Beverages", "Snacks", "Household"]
+        self.category_menu = tk.OptionMenu(input_frame, self.category_var, *category_options)
+        self.category_menu.config(width=22)
+        self.category_menu.grid(row=1, column=1, padx=10, pady=5)
+
+        # Quantity
+        tk.Label(input_frame, text="Quantity:", font=("Arial", 11), bg="#f4f4f4").grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        self.quantity_entry = tk.Entry(input_frame, width=25)
+        self.quantity_entry.grid(row=2, column=1, padx=10, pady=5)
+
+        # Buttons frame
+        button_frame = tk.Frame(root, bg="#f4f4f4")
+        button_frame.pack(pady=10)
+
+        tk.Button(button_frame, text="Add Item", width=15, command=self.add_item).grid(row=0, column=0, padx=10, pady=5)
+        tk.Button(button_frame, text="Show Cart", width=15, command=self.show_cart).grid(row=0, column=1, padx=10, pady=5)
+        tk.Button(button_frame, text="Clear Cart", width=15, command=self.clear_cart).grid(row=0, column=2, padx=10, pady=5)
+
+        # Cart display
+        cart_frame = tk.Frame(root, bg="#f4f4f4")
+        cart_frame.pack(pady=10)
+
+        tk.Label(cart_frame, text="Shopping Cart", font=("Arial", 14, "bold"), bg="#f4f4f4").pack()
+
+        self.cart_listbox = tk.Listbox(cart_frame, width=70, height=15)
+        self.cart_listbox.pack(pady=10)
+
+        # Total items label
+        self.total_label = tk.Label(
+            root,
+            text="Total Number of Items: 0",
+            font=("Arial", 12, "bold"),
+            bg="#f4f4f4"
+        )
+        self.total_label.pack(pady=10)
+
+    def create_menu(self):
+        """Creates the menu bar for additional application functions."""
+        menu_bar = tk.Menu(self.root)
+
+        file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label="New Order", command=self.new_order)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.root.quit)
+
+        menu_bar.add_cascade(label="File", menu=file_menu)
+        self.root.config(menu=menu_bar)
+
+    def add_item(self):
+        """Adds an item to the shopping cart after validating user input."""
+        item_name = self.item_entry.get().strip()
+        category = self.category_var.get().strip()
+        quantity_text = self.quantity_entry.get().strip()
+
+        # Error handling for empty item name
+        if item_name == "":
+            messagebox.showerror("Input Error", "Item name cannot be empty.")
+            return
+
+        # Error handling for invalid quantity
+        if quantity_text == "":
+            messagebox.showerror("Input Error", "Quantity cannot be empty.")
+            return
+
+        try:
+            quantity = int(quantity_text)
+            if quantity <= 0:
+                messagebox.showerror("Input Error", "Quantity must be greater than 0.")
+                return
+        except ValueError:
+            messagebox.showerror("Input Error", "Quantity must be a whole number.")
+            return
+
+        # Add item to cart
+        cart_item = {
+            "name": item_name,
+            "category": category,
+            "quantity": quantity
+        }
+        self.cart.append(cart_item)
+
+        # Refresh display
+        self.update_cart_display()
+
+        # Clear input fields after adding
+        self.item_entry.delete(0, tk.END)
+        self.quantity_entry.delete(0, tk.END)
+        self.category_var.set("Produce")
+
+        messagebox.showinfo("Success", f"{item_name} added to the cart.")
+
+    def show_cart(self):
+        """Displays the shopping cart items in the listbox."""
+        self.update_cart_display()
+
+    def update_cart_display(self):
+        """Refreshes the cart display and updates the total number of items."""
+        self.cart_listbox.delete(0, tk.END)
+
+        if not self.cart:
+            self.cart_listbox.insert(tk.END, "Cart is currently empty.")
+            self.total_label.config(text="Total Number of Items: 0")
+            return
+
+        total_items = 0
+        for index, item in enumerate(self.cart, start=1):
+            display_text = f"{index}. {item['name']} | Category: {item['category']} | Quantity: {item['quantity']}"
+            self.cart_listbox.insert(tk.END, display_text)
+            total_items += item["quantity"]
+
+        self.total_label.config(text=f"Total Number of Items: {total_items}")
+
+    def clear_cart(self):
+        """Clears all items from the shopping cart."""
+        if not self.cart:
+            messagebox.showwarning("Cart Empty", "There are no items to clear.")
+            return
+
+        self.cart.clear()
+        self.update_cart_display()
+        messagebox.showinfo("Cart Cleared", "All items have been removed from the cart.")
+
+    def new_order(self):
+        """Starts a new order by clearing the cart and resetting inputs."""
+        confirm = messagebox.askyesno("New Order", "Start a new order? This will clear the current cart.")
+        if confirm:
+            self.cart.clear()
+            self.item_entry.delete(0, tk.END)
+            self.quantity_entry.delete(0, tk.END)
+            self.category_var.set("Produce")
+            self.update_cart_display()
+            messagebox.showinfo("New Order", "A new order has started.")
+
+
+def main():
+    root = tk.Tk()
+    app = GroceryStoreApp(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
